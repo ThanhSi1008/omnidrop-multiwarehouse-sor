@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Order } from './order.entity';
 
 @Entity({ schema: 'order', name: 'fulfillments' })
@@ -6,6 +6,7 @@ export class Fulfillment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ name: 'order_id', type: 'uuid' })
   orderId: string;
 

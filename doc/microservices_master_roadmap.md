@@ -54,26 +54,26 @@
 
 **Mục tiêu:** Dựng "khung xương" để các dịch vụ Omni có thể khởi chạy và giao tiếp mượt mà với nhau dưới môi trường local.
 
-- [ ] **Thiết lập Monorepo:** Cấu trúc thư mục chứa mã nguồn của cả API Gateway và 3 Dịch vụ trong cùng một kho lưu trữ (Repository) để dễ dàng chia sẻ TypeScript Interfaces, DTOs và cấu hình chung.
-- [ ] **Soạn thảo Docker Compose (`docker-compose.yml`):** Định nghĩa cấu hình các hạ tầng dùng chung cho hệ thống Omni:
+- [x] **Thiết lập Monorepo:** Cấu trúc thư mục chứa mã nguồn của cả API Gateway và 3 Dịch vụ trong cùng một kho lưu trữ (Repository) để dễ dàng chia sẻ TypeScript Interfaces, DTOs và cấu hình chung.
+- [x] **Soạn thảo Docker Compose (`docker-compose.yml`):** Định nghĩa cấu hình các hạ tầng dùng chung cho hệ thống Omni:
   - **PostgreSQL:** Lưu trữ dữ liệu quan hệ có tính toàn vẹn ACID cao.
   - **Redis:** Lưu cache và quản lý atomic counter, TTL cho cơ chế Hold kho Flash Sale.
   - **RabbitMQ:** Điều hòa tải đơn hàng, chống nghẽn nghẹt cổ chai tại Database.
   - **Jaeger / Zipkin:** Hỗ trợ Distributed Tracing (truy vết request phân tán).
-- [ ] **Setup API Gateway:** Khởi tạo dịch vụ Gateway bằng NestJS làm nhiệm vụ định tuyến proxy đến các dịch vụ Core và Flash Sale tương ứng.
+- [x] **Setup API Gateway:** Khởi tạo dịch vụ Gateway bằng NestJS làm nhiệm vụ định tuyến proxy đến các dịch vụ Core và Flash Sale tương ứng.
 
 ### Giai đoạn 2: Thiết kế cơ sở dữ liệu & tạo phôi dịch vụ (Scaffolding)
 
 **Mục tiêu:** Mô hình hóa các yêu cầu của thương hiệu Omni vào cấu trúc bảng vật lý và sẵn sàng các khung API.
 
-- [ ] **Thiết kế Database Schema (PostgreSQL):**
+- [x] **Thiết kế Database Schema (PostgreSQL):**
   - Thiết kế bảng sản phẩm `products` và biến thể `product_variants` (SKUs).
   - Thiết kế bảng kho hàng `warehouses` (`KHO_HN`, `KHO_HCM`) và bảng cầu nối quản lý tồn kho `inventory` (chứa `reserved_quantity` để giữ chỗ).
   - Thiết kế bảng định nghĩa Combo `bundles` và bảng thành phần lẻ cấu thành `bundle_items`.
-- [ ] **Quy hoạch Key-value trên Redis:**
+- [x] **Quy hoạch Key-value trên Redis:**
   - Định nghĩa cấu trúc lưu trữ tồn kho Flash Sale tạm thời (ví dụ: `inventory:flash_sale:{sku}`).
   - Thiết lập cơ chế kiểm soát lượt mua của người dùng (ví dụ: `user:limit:{campaign_id}:{user_id}`).
-- [ ] **Tạo phôi dự án (Scaffolding):** Khởi tạo dự án NestJS trống cho từng service, cấu hình kết nối Database và Redis tương ứng.
+- [x] **Tạo phôi dự án (Scaffolding):** Khởi tạo dự án NestJS trống cho từng service, cấu hình kết nối Database và Redis tương ứng.
 
 ### Giai đoạn 3: Phát triển Core Backend & giao tiếp phân tán (Distributed Core)
 

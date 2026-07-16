@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { Product } from './product.entity';
 import { Inventory } from './inventory.entity';
 import { BundleItem } from './bundle-item.entity';
@@ -8,6 +8,7 @@ export class ProductVariant {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ name: 'product_id', type: 'uuid' })
   productId: string;
 

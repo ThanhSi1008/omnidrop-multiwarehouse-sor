@@ -1,10 +1,22 @@
 import { Controller, All, Get, Req, Res, Logger } from '@nestjs/common';
 import HttpProxy from 'http-proxy';
+import * as http from 'http';
 
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name);
-  private readonly proxy = HttpProxy.createProxyServer({});
+  
+  // Tối ưu hóa Keep-Alive Agent để tái sử dụng connection socket, giảm overhead TCP handshake ở tải cao
+  private readonly keepAliveAgent = new http.Agent({
+    keepAlive: true,
+    keepAliveMsecs: 1000,
+    maxSockets: 1000, // Tăng số lượng connection đồng thời tối đa
+    maxFreeSockets: 256,
+  });
+
+  private readonly proxy = HttpProxy.createProxyServer({
+    agent: this.keepAliveAgent,
+  });
 
   constructor() {
     this.proxy.on('error', (err: Error, req: any, res: any) => {
