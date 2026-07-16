@@ -6,6 +6,7 @@
     "libs/*"
   ],
   "scripts": {
+    "build": "npm run build --workspaces --if-present",
     "infra:up": "docker-compose up -d",
     "infra:down": "docker-compose down",
     "dev:gateway": "npm run start:dev -w apps/api-gateway",
