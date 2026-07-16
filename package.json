@@ -13,5 +13,12 @@
     "dev:core": "npm run start:dev -w apps/core-service",
     "dev:flash-sale": "npm run start:dev -w apps/flash-sale-service",
     "dev:order": "npm run start:dev -w apps/order-routing-service"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.4",
+    "@grpc/proto-loader": "^0.8.1",
+    "@nestjs/microservices": "^11.1.28",
+    "amqp-connection-manager": "^5.0.0",
+    "amqplib": "^2.0.1"
   }
 }

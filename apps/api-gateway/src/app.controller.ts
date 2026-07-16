@@ -10,7 +10,7 @@ export class AppController {
   private readonly keepAliveAgent = new http.Agent({
     keepAlive: true,
     keepAliveMsecs: 1000,
-    maxSockets: 1000, // Tăng số lượng connection đồng thời tối đa
+    maxSockets: 1000,
     maxFreeSockets: 256,
   });
 
@@ -33,15 +33,51 @@ export class AppController {
     return 'Omnidrop Multiwarehouse SOR API Gateway is running.';
   }
 
-  @All('products*path')
-  routeProducts(@Req() req: any, @Res() res: any) {
+  // --- PRODUCTS ROUTING ---
+  @All('products')
+  routeProductsBase(@Req() req: any, @Res() res: any) {
+    this.forwardProducts(req, res);
+  }
+
+  @All('products/*path')
+  routeProductsSub(@Req() req: any, @Res() res: any) {
+    this.forwardProducts(req, res);
+  }
+
+  private forwardProducts(req: any, res: any) {
     this.logger.log(`Proxying request for products to Core Service: ${req.method} ${req.url}`);
     this.proxy.web(req, res, { target: 'http://localhost:3001' });
   }
 
-  @All('purchase*path')
-  routePurchase(@Req() req: any, @Res() res: any) {
+  // --- PURCHASE ROUTING ---
+  @All('purchase')
+  routePurchaseBase(@Req() req: any, @Res() res: any) {
+    this.forwardPurchase(req, res);
+  }
+
+  @All('purchase/*path')
+  routePurchaseSub(@Req() req: any, @Res() res: any) {
+    this.forwardPurchase(req, res);
+  }
+
+  private forwardPurchase(req: any, res: any) {
     this.logger.log(`Proxying request for purchase to Flash Sale Service: ${req.method} ${req.url}`);
     this.proxy.web(req, res, { target: 'http://localhost:3002' });
+  }
+
+  // --- ORDERS ROUTING ---
+  @All('orders')
+  routeOrdersBase(@Req() req: any, @Res() res: any) {
+    this.forwardOrders(req, res);
+  }
+
+  @All('orders/*path')
+  routeOrdersSub(@Req() req: any, @Res() res: any) {
+    this.forwardOrders(req, res);
+  }
+
+  private forwardOrders(req: any, res: any) {
+    this.logger.log(`Proxying request for orders to Order Routing Service: ${req.method} ${req.url}`);
+    this.proxy.web(req, res, { target: 'http://localhost:3003' });
   }
 }

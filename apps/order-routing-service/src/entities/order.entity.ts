@@ -31,10 +31,17 @@ export class Order {
   @Column({ name: 'detail_address', type: 'text' })
   detailAddress: string;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @Column({ name: 'campaign_id', type: 'varchar', length: 100, nullable: true })
+  campaignId: string;
+
+  @Column({ name: 'reservation_token', type: 'varchar', length: 100, nullable: true })
+  reservationToken: string;
+
+  // Use timestamptz to enforce timezone-aware UTC dates and avoid offset bugs
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 
   @OneToMany(() => OrderItem, (item) => item.order)

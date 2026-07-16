@@ -79,13 +79,13 @@
 
 **Mục tiêu:** Giải quyết các bài toán kỹ thuật cốt lõi: Chống sập bằng Queue, Chống quá bán bằng Lua Script và Điều phối đa kho thông minh.
 
-- [ ] **Cấu hình gRPC (Đồng bộ):** Thiết lập client-server gRPC giữa Order Service và Core Service để truy vấn thông tin sản phẩm, giá cả và thông tin combo với độ trễ tối thiểu (dưới 10ms).
-- [ ] **Cấu hình RabbitMQ (Bất đồng bộ):** Định nghĩa các Exchange, Queue và Event Schema (`order.created`, `order.timeout`, `inventory.released`).
-- [ ] **Viết Redis Lua Script:** Hiện thực hóa logic kiểm tra tồn kho, giới hạn lượt mua của user và trừ số lượng trong một giao dịch nguyên tử (*Atomic Transaction*) duy nhất trên Redis.
-- [ ] **Triển khai Saga Pattern (Choreography):**
+- [x] **Cấu hình gRPC (Đồng bộ):** Thiết lập client-server gRPC giữa Order Service và Core Service để truy vấn thông tin sản phẩm, giá cả và thông tin combo với độ trễ tối thiểu (dưới 10ms).
+- [x] **Cấu hình RabbitMQ (Bất đồng bộ):** Định nghĩa các Exchange, Queue và Event Schema (`order.created`, `order.timeout`, `inventory.released`).
+- [x] **Viết Redis Lua Script:** Hiện thực hóa logic kiểm tra tồn kho, giới hạn lượt mua của user và trừ số lượng trong một giao dịch nguyên tử (*Atomic Transaction*) duy nhất trên Redis.
+- [x] **Triển khai Saga Pattern (Choreography):**
   - *Luồng thành công:* Đơn hàng từ Queue &rarr; Order Service xử lý Smart Routing &rarr; Ghi DB &rarr; Chờ thanh toán &rarr; Thanh toán thành công (Webhook) &rarr; Chuyển trạng thái `PAID` và trừ kho vật lý.
   - *Luồng thất bại/bù trừ (Compensating):* Quá 5 phút không thanh toán &rarr; Bắn event hủy đơn &rarr; Flash Sale Service nhả lại kho trên Redis (`INCRBY` tồn kho và xóa khóa giới hạn mua).
-- [ ] **Thuật toán Smart Order Routing (SOR):** Viết logic tự động map vị trí khách hàng với kho gần nhất, tự động phân tách đơn hàng (*Split Order*) nếu không có kho nào đáp ứng đủ 100% danh sách mặt hàng yêu cầu.
+- [x] **Thuật toán Smart Order Routing (SOR):** Viết logic tự động map vị trí khách hàng với kho gần nhất, tự động phân tách đơn hàng (*Split Order*) nếu không có kho nào đáp ứng đủ 100% danh sách mặt hàng yêu cầu.
 
 ### Giai đoạn 4: Phát triển giao diện (Front-end Development)
 

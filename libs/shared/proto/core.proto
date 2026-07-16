@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package core;
+
+service CoreService {
+  rpc GetSkuStock (GetSkuStockRequest) returns (GetSkuStockResponse);
+}
+
+message GetSkuStockRequest {
+  string sku = 1;
+}
+
+message WarehouseStock {
+  string warehouse_code = 1;
+  int32 quantity = 2;
+  int32 reserved_quantity = 3;
+  int32 available_to_sell = 4;
+}
+
+message GetSkuStockResponse {
+  string sku = 1;
+  repeated WarehouseStock stocks = 2;
+  double price = 3; // Price of the variant
+}
