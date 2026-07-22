@@ -1,6 +1,7 @@
 import { Controller, All, Get, Req, Res, Logger } from '@nestjs/common';
 import HttpProxy from 'http-proxy';
 import * as http from 'http';
+import * as crypto from 'crypto';
 
 @Controller()
 export class AppController {
@@ -10,8 +11,8 @@ export class AppController {
   private readonly keepAliveAgent = new http.Agent({
     keepAlive: true,
     keepAliveMsecs: 1000,
-    maxSockets: 1000,
-    maxFreeSockets: 256,
+    maxSockets: 2000,
+    maxFreeSockets: 512,
   });
 
   private readonly proxy = HttpProxy.createProxyServer({
@@ -26,6 +27,29 @@ export class AppController {
         res.end(JSON.stringify({ statusCode: 502, message: 'Bad Gateway' }));
       }
     });
+
+    // Ensure X-Trace-Id header is attached to proxied responses
+    this.proxy.on('proxyRes', (proxyRes: any, req: any, res: any) => {
+      const traceId = req.headers['x-trace-id'];
+      if (traceId) {
+        proxyRes.headers['x-trace-id'] = traceId;
+        if (res && typeof res.setHeader === 'function' && !res.headersSent) {
+          res.setHeader('X-Trace-Id', traceId);
+        }
+      }
+    });
+  }
+
+  private ensureTraceId(req: any, res: any): string {
+    let traceId = req.headers['x-trace-id'];
+    if (!traceId) {
+      traceId = `trace_${crypto.randomUUID()}`;
+      req.headers['x-trace-id'] = traceId;
+    }
+    if (res && typeof res.setHeader === 'function' && !res.headersSent) {
+      res.setHeader('X-Trace-Id', traceId);
+    }
+    return traceId;
   }
 
   @Get()
@@ -45,7 +69,8 @@ export class AppController {
   }
 
   private forwardProducts(req: any, res: any) {
-    this.logger.log(`Proxying request for products to Core Service: ${req.method} ${req.url}`);
+    const traceId = this.ensureTraceId(req, res);
+    this.logger.log(`[${traceId}] Proxying request for products to Core Service: ${req.method} ${req.url}`);
     this.proxy.web(req, res, { target: 'http://localhost:3001' });
   }
 
@@ -61,7 +86,8 @@ export class AppController {
   }
 
   private forwardPurchase(req: any, res: any) {
-    this.logger.log(`Proxying request for purchase to Flash Sale Service: ${req.method} ${req.url}`);
+    const traceId = this.ensureTraceId(req, res);
+    this.logger.log(`[${traceId}] Proxying request for purchase to Flash Sale Service: ${req.method} ${req.url}`);
     this.proxy.web(req, res, { target: 'http://localhost:3002' });
   }
 
@@ -77,7 +103,8 @@ export class AppController {
   }
 
   private forwardOrders(req: any, res: any) {
-    this.logger.log(`Proxying request for orders to Order Routing Service: ${req.method} ${req.url}`);
+    const traceId = this.ensureTraceId(req, res);
+    this.logger.log(`[${traceId}] Proxying request for orders to Order Routing Service: ${req.method} ${req.url}`);
     this.proxy.web(req, res, { target: 'http://localhost:3003' });
   }
 }

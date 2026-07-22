@@ -38,6 +38,40 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get('products')
+  async getProducts() {
+    const variants = await this.variantRepo.find({
+      relations: {
+        product: true,
+        inventories: {
+          warehouse: true,
+        },
+      },
+    });
+
+    return variants.map((v) => {
+      const warehouses = v.inventories ? v.inventories.map((inv) => ({
+        warehouseCode: inv.warehouse?.code || '',
+        warehouseName: inv.warehouse?.name || '',
+        quantity: inv.quantity,
+        reservedQuantity: inv.reservedQuantity,
+        availableToSell: inv.quantity - inv.reservedQuantity,
+      })) : [];
+
+      const totalAts = warehouses.reduce((sum, w) => sum + w.availableToSell, 0);
+
+      return {
+        id: v.id,
+        sku: v.sku,
+        price: Number(v.price),
+        title: v.product?.title || 'Product',
+        description: v.product?.description || '',
+        warehouses,
+        totalAts,
+      };
+    });
+  }
+
   @EventPattern('order.paid')
   async handleOrderPaid(@Payload() event: OrderPaidEvent) {
     this.logger.log(`Received order.paid event for Order: ${event.order_id}`);

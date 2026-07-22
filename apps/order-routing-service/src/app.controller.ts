@@ -84,6 +84,20 @@ export class AppController implements OnModuleInit {
     }, 10000);
   }
 
+  @Get()
+  async getAllOrders() {
+    const orders = await this.orderRepo.find({
+      relations: {
+        items: true,
+        fulfillments: true,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return orders;
+  }
+
   @EventPattern('order.created')
   async handleOrderCreated(@Payload() event: OrderCreatedEvent) {
     this.logger.log(`Received order.created event for Order ID: ${event.data.order_id}`);

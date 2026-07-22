@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Inject, BadRequestException, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Inject, BadRequestException, HttpException, HttpStatus, Logger, Res } from '@nestjs/common';
 import { ClientProxy, EventPattern, Payload } from '@nestjs/microservices';
 import Redis from 'ioredis';
 import { REDIS_KEYS } from '@omni/shared';
@@ -17,6 +17,11 @@ interface PurchaseDto {
   };
 }
 
+interface SetCampaignDto {
+  sku: string;
+  stock: number;
+}
+
 @Controller('purchase')
 export class AppController {
   private readonly logger = new Logger(AppController.name);
@@ -27,6 +32,73 @@ export class AppController {
     @Inject('ORDER_SERVICE_MQ')
     private readonly mqClient: ClientProxy,
   ) {}
+
+  @Get('stock')
+  async getStock(@Query('sku') sku?: string) {
+    const targetSku = sku || 'KINH-X-DEN-SIZE-M';
+    const stockKey = REDIS_KEYS.flashSaleInventory(targetSku);
+    const stockVal = await this.redis.get(stockKey);
+    return {
+      sku: targetSku,
+      stock: stockVal !== null ? parseInt(stockVal, 10) : 0,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('stock-stream')
+  async streamStock(@Query('sku') sku: string | undefined, @Res() res: any) {
+    const targetSku = sku || 'KINH-X-DEN-SIZE-M';
+    const stockKey = REDIS_KEYS.flashSaleInventory(targetSku);
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    const sendStock = async () => {
+      const stockVal = await this.redis.get(stockKey);
+      const data = JSON.stringify({
+        sku: targetSku,
+        stock: stockVal !== null ? parseInt(stockVal, 10) : 0,
+        timestamp: new Date().toISOString(),
+      });
+      res.write(`data: ${data}\n\n`);
+    };
+
+    await sendStock();
+    const intervalId = setInterval(sendStock, 1000);
+
+    res.on('close', () => {
+      clearInterval(intervalId);
+      res.end();
+    });
+  }
+
+  @Post('admin/campaign')
+  async setCampaign(@Body() body: SetCampaignDto) {
+    const { sku, stock } = body;
+    if (!sku || stock === undefined || stock < 0) {
+      throw new BadRequestException('Invalid sku or stock');
+    }
+
+    const stockKey = REDIS_KEYS.flashSaleInventory(sku);
+    await this.redis.set(stockKey, stock);
+
+    // Clear all user limits
+    const limitKeys = await this.redis.keys('user:limit:*');
+    if (limitKeys.length > 0) {
+      await this.redis.del(...limitKeys);
+    }
+
+    this.logger.log(`Admin set flash sale stock for ${sku} to ${stock} and cleared ${limitKeys.length} user limits.`);
+
+    return {
+      success: true,
+      sku,
+      stock,
+      clearedLimitsCount: limitKeys.length,
+    };
+  }
 
   @Post()
   async purchase(@Body() body: PurchaseDto) {

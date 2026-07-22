@@ -12,7 +12,11 @@
     "dev:gateway": "npm run start:dev -w apps/api-gateway",
     "dev:core": "npm run start:dev -w apps/core-service",
     "dev:flash-sale": "npm run start:dev -w apps/flash-sale-service",
-    "dev:order": "npm run start:dev -w apps/order-routing-service"
+    "dev:order": "npm run start:dev -w apps/order-routing-service",
+    "dev:web": "npm run dev -w apps/web-app",
+    "test:load": "node scripts/load_test.js",
+    "test:integrity": "node scripts/verify_integrity.js",
+    "test:all": "node tests/run_all_tests.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.4",

@@ -1,4 +1,5 @@
 import { Client } from 'pg';
+export * from './trace.middleware';
 
 export interface UserLimitKey {
   campaignId: string;
