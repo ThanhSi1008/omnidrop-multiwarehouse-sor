@@ -115,3 +115,24 @@ export async function payOrderApi(orderId: string): Promise<{ success: boolean; 
   if (!res.ok) throw new Error(data.message || 'Thanh toán thất bại');
   return data;
 }
+
+export async function registerUserApi(payload: { fullName: string; email: string; phone?: string }): Promise<any> {
+  const res = await fetch('/api/users/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Đăng ký thất bại');
+  return res.json();
+}
+
+export async function loginUserApi(email: string): Promise<any> {
+  const res = await fetch('/api/users/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error('Đăng nhập thất bại');
+  return res.json();
+}
+

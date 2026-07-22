@@ -1,4 +1,4 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { ProductVariant } from './entities/product-variant.entity';
 import { Inventory } from './entities/inventory.entity';
 import { Warehouse } from './entities/warehouse.entity';
+import { User } from './entities/user.entity';
 
 interface OrderPaidEvent {
   order_id: string;
@@ -31,6 +32,9 @@ export class AppController {
 
     @InjectRepository(Warehouse)
     private readonly warehouseRepo: Repository<Warehouse>,
+
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   @Get()
@@ -70,6 +74,52 @@ export class AppController {
         totalAts,
       };
     });
+  }
+
+  @Get('users')
+  async getUsers() {
+    return this.userRepo.find({ order: { createdAt: 'DESC' } });
+  }
+
+  @Post('users/register')
+  async registerUser(@Body() body: { fullName: string; email: string; phone?: string; avatarUrl?: string }) {
+    let existing = await this.userRepo.findOne({ where: { email: body.email } });
+    if (existing) {
+      existing.fullName = body.fullName || existing.fullName;
+      if (body.phone) existing.phone = body.phone;
+      if (body.avatarUrl) existing.avatarUrl = body.avatarUrl;
+      return this.userRepo.save(existing);
+    }
+
+    const user = this.userRepo.create({
+      email: body.email,
+      fullName: body.fullName,
+      phone: body.phone || '0987654321',
+      avatarUrl: body.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${body.email}`,
+      loyaltyPoints: 100,
+    });
+
+    const saved = await this.userRepo.save(user);
+    this.logger.log(`Registered new customer in PostgreSQL: ${saved.email} (${saved.id})`);
+    return saved;
+  }
+
+  @Post('users/login')
+  async loginUser(@Body() body: { email: string }) {
+    let user = await this.userRepo.findOne({ where: { email: body.email } });
+    if (!user) {
+      const name = body.email.split('@')[0] || 'Khách Hàng VIP';
+      user = this.userRepo.create({
+        email: body.email,
+        fullName: name.charAt(0).toUpperCase() + name.slice(1),
+        phone: '0987654321',
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${body.email}`,
+        loyaltyPoints: 50,
+      });
+      user = await this.userRepo.save(user);
+      this.logger.log(`Created & logged in customer in PostgreSQL: ${user.email}`);
+    }
+    return user;
   }
 
   @EventPattern('order.paid')

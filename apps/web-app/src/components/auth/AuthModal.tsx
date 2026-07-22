@@ -14,14 +14,14 @@ export const AuthModal: React.FC = () => {
 
   if (!isAuthModalOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === 'login') {
-      login(email);
-      showToast(`Đăng nhập thành công! Chào mừng bạn quay trở lại.`, 'success');
+      await login(email);
+      showToast(`Đăng nhập thành công! Đã lưu tài khoản trong CSDL PostgreSQL.`, 'success');
     } else {
-      register(fullName, email);
-      showToast(`Đăng ký tài khoản thành công!`, 'success');
+      await register(fullName, email);
+      showToast(`Đăng ký tài khoản thành công! Đã lưu khách hàng vào CSDL PostgreSQL.`, 'success');
     }
   };
 

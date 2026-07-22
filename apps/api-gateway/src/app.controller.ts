@@ -74,6 +74,23 @@ export class AppController {
     this.proxy.web(req, res, { target: 'http://localhost:3001' });
   }
 
+  // --- USERS ROUTING ---
+  @All('users')
+  routeUsersBase(@Req() req: any, @Res() res: any) {
+    this.forwardUsers(req, res);
+  }
+
+  @All('users/*path')
+  routeUsersSub(@Req() req: any, @Res() res: any) {
+    this.forwardUsers(req, res);
+  }
+
+  private forwardUsers(req: any, res: any) {
+    const traceId = this.ensureTraceId(req, res);
+    this.logger.log(`[${traceId}] Proxying request for users to Core Service: ${req.method} ${req.url}`);
+    this.proxy.web(req, res, { target: 'http://localhost:3001' });
+  }
+
   // --- PURCHASE ROUTING ---
   @All('purchase')
   routePurchaseBase(@Req() req: any, @Res() res: any) {
