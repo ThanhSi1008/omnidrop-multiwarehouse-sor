@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import Redis from 'ioredis';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Product } from './entities/product.entity';
@@ -27,6 +28,14 @@ import { CoreGrpcController } from './core-grpc.controller';
     TypeOrmModule.forFeature([Product, ProductVariant, Warehouse, Inventory, Bundle, BundleItem, User]),
   ],
   controllers: [AppController, CoreGrpcController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: 'REDIS_CLIENT',
+      useFactory: () => {
+        return new Redis({ host: 'localhost', port: 6380 });
+      },
+    },
+  ],
 })
 export class AppModule {}

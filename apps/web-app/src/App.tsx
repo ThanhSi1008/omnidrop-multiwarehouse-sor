@@ -13,6 +13,7 @@ import { CartDrawer } from './components/checkout/CartDrawer';
 import { CheckoutPage } from './components/checkout/CheckoutPage';
 import { OrderHistoryModal } from './components/orders/OrderHistoryModal';
 import { AuthModal } from './components/auth/AuthModal';
+import { UserProfileModal } from './components/auth/UserProfileModal';
 import { StoreLocatorModal } from './components/common/StoreLocatorModal';
 import { AdminPortal } from './components/admin/AdminPortal';
 
@@ -154,6 +155,9 @@ function StorefrontContent() {
 
       {/* Customer Auth Modal */}
       <AuthModal />
+
+      {/* User Profile Edit Modal */}
+      <UserProfileModal />
 
       {/* Store Locator Modal */}
       <StoreLocatorModal isOpen={isStoreLocatorOpen} onClose={() => setIsStoreLocatorOpen(false)} />

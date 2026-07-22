@@ -15,32 +15,32 @@ export async function fetchProductsApi(): Promise<ProductItem[]> {
 
     if (item.sku === 'KINH-X-DEN-SIZE-M') {
       category = 'flash_sale';
-      imageUrl = '/omni_hoodie.png';
+      imageUrl = 'https://res.cloudinary.com/dlrtv3tla/image/upload/v1784752539/omnidrop_apparel_products/polo_cooltech_luxury_black.jpg';
       badge = '⚡ FLASH SALE POLO';
       originalPrice = 650000;
     } else if (item.sku === 'HOODIE-OMNI-BLACK-L') {
       category = 'apparel';
-      imageUrl = '/omni_hoodie.png';
+      imageUrl = 'https://res.cloudinary.com/dlrtv3tla/image/upload/v1784752540/omnidrop_apparel_products/hoodie_oversized_heavyweight.jpg';
       badge = 'HOODIE 400GSM';
       originalPrice = 890000;
     } else if (item.sku === 'QUAN-KHAKI-OWEN-SLIM') {
       category = 'apparel';
-      imageUrl = '/omni_hoodie.png';
+      imageUrl = 'https://res.cloudinary.com/dlrtv3tla/image/upload/v1784752541/omnidrop_apparel_products/quan_khaki_owen_slimfit.jpg';
       badge = 'KHAKI SLIM-FIT';
       originalPrice = 650000;
     } else if (item.sku === 'AO-SOMI-FORMAL-TRANG') {
       category = 'apparel';
-      imageUrl = '/omni_hoodie.png';
+      imageUrl = 'https://res.cloudinary.com/dlrtv3tla/image/upload/v1784752543/omnidrop_apparel_products/ao_somi_formal_trang_premium.jpg';
       badge = 'SƠ MI CÔNG SỞ';
       originalPrice = 720000;
     } else if (item.sku === 'AO-KHOAC-BOMBER-DEN') {
       category = 'apparel';
-      imageUrl = '/omni_hoodie.png';
+      imageUrl = 'https://res.cloudinary.com/dlrtv3tla/image/upload/v1784752544/omnidrop_apparel_products/ao_khoac_bomber_minimalist.jpg';
       badge = 'BOMBER 2 LỚP';
       originalPrice = 950000;
     } else if (item.sku === 'COMBO-3-AO-THUN-BASIC') {
       category = 'bundles';
-      imageUrl = '/omni_bundle.png';
+      imageUrl = 'https://res.cloudinary.com/dlrtv3tla/image/upload/v1784752545/omnidrop_apparel_products/combo_3_ao_thun_basic_cotton.jpg';
       badge = '🎁 COMBO 3 ÁO THUN';
       originalPrice = 580000;
     }
@@ -135,4 +135,15 @@ export async function loginUserApi(email: string): Promise<any> {
   if (!res.ok) throw new Error('Đăng nhập thất bại');
   return res.json();
 }
+
+export async function updateUserApi(id: string, payload: { fullName?: string; phone?: string; avatarUrl?: string }): Promise<any> {
+  const res = await fetch(`/api/users/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Cập nhật thông tin thất bại');
+  return res.json();
+}
+
 

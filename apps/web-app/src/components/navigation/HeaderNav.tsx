@@ -29,7 +29,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   setActiveCategory,
 }) => {
   const { cartCount, setIsCartOpen } = useCart();
-  const { user, isAuthenticated, setIsAuthModalOpen, logout } = useAuth();
+  const { user, isAuthenticated, setIsAuthModalOpen, setIsProfileModalOpen, logout } = useAuth();
 
   return (
     <header
@@ -216,12 +216,33 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 
           {/* User Session */}
           {isAuthenticated && user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-glass)', fontSize: '0.85rem' }}>
-              <span style={{ fontWeight: 700, color: '#4ade80' }}>👤 {user.fullName}</span>
-              <button onClick={logout} style={{ background: 'transparent', border: 'none', color: '#f87171', fontSize: '0.78rem', cursor: 'pointer', marginLeft: '4px' }}>
-                Thoát
-              </button>
-            </div>
+            <button
+              onClick={() => setIsProfileModalOpen(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 12px',
+                borderRadius: '10px',
+                background: 'rgba(52, 211, 153, 0.1)',
+                border: '1px solid rgba(52, 211, 153, 0.3)',
+                color: '#34d399',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                fontWeight: 700,
+              }}
+              title="Xem và chỉnh sửa thông tin cá nhân"
+            >
+              <img
+                src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
+                alt={user.fullName}
+                style={{ width: '22px', height: '22px', borderRadius: '50%' }}
+              />
+              <span>{user.fullName}</span>
+              <span style={{ fontSize: '0.72rem', background: 'rgba(52,211,153,0.2)', padding: '2px 6px', borderRadius: '10px' }}>
+                {user.loyaltyPoints || 100} PTS
+              </span>
+            </button>
           ) : (
             <button className="btn-secondary" style={{ padding: '8px 12px', fontSize: '0.82rem' }} onClick={() => setIsAuthModalOpen(true)}>
               <User size={15} /> Đăng Nhập

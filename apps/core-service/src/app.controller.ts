@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Logger, Inject, NotFoundException } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import Redis from 'ioredis';
 import { AppService } from './app.service';
 import { ProductVariant } from './entities/product-variant.entity';
 import { Inventory } from './entities/inventory.entity';
@@ -17,12 +18,18 @@ interface OrderPaidEvent {
   }[];
 }
 
+const PRODUCTS_CACHE_KEY = 'cache:products:all';
+const PRODUCTS_CACHE_TTL = 60; // 60 seconds TTL
+
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name);
 
   constructor(
     private readonly appService: AppService,
+
+    @Inject('REDIS_CLIENT')
+    private readonly redis: Redis,
 
     @InjectRepository(ProductVariant)
     private readonly variantRepo: Repository<ProductVariant>,
@@ -44,6 +51,19 @@ export class AppController {
 
   @Get('products')
   async getProducts() {
+    // 1. Try Read from Redis Cache to Offload DB
+    try {
+      const cached = await this.redis.get(PRODUCTS_CACHE_KEY);
+      if (cached) {
+        this.logger.log(`[Cache Hit] Serving /products from Redis RAM cache (${PRODUCTS_CACHE_KEY})`);
+        return JSON.parse(cached);
+      }
+    } catch (err) {
+      this.logger.warn(`Redis Cache Read Error: ${err.message}`);
+    }
+
+    // 2. Cache Miss: Query PostgreSQL Database
+    this.logger.log(`[Cache Miss] Querying PostgreSQL DB for /products...`);
     const variants = await this.variantRepo.find({
       relations: {
         product: true,
@@ -53,7 +73,7 @@ export class AppController {
       },
     });
 
-    return variants.map((v) => {
+    const formatted = variants.map((v) => {
       const warehouses = v.inventories ? v.inventories.map((inv) => ({
         warehouseCode: inv.warehouse?.code || '',
         warehouseName: inv.warehouse?.name || '',
@@ -74,6 +94,16 @@ export class AppController {
         totalAts,
       };
     });
+
+    // 3. Cache Result in Redis RAM with 60s TTL
+    try {
+      await this.redis.set(PRODUCTS_CACHE_KEY, JSON.stringify(formatted), 'EX', PRODUCTS_CACHE_TTL);
+      this.logger.log(`[Cache Write] Saved /products result into Redis RAM (TTL ${PRODUCTS_CACHE_TTL}s)`);
+    } catch (err) {
+      this.logger.warn(`Redis Cache Write Error: ${err.message}`);
+    }
+
+    return formatted;
   }
 
   @Get('users')
@@ -122,6 +152,21 @@ export class AppController {
     return user;
   }
 
+  @Put('users/:id')
+  async updateUser(@Param('id') id: string, @Body() body: { fullName?: string; phone?: string; avatarUrl?: string }) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('Customer user not found');
+    }
+    if (body.fullName !== undefined) user.fullName = body.fullName;
+    if (body.phone !== undefined) user.phone = body.phone;
+    if (body.avatarUrl !== undefined) user.avatarUrl = body.avatarUrl;
+
+    const saved = await this.userRepo.save(user);
+    this.logger.log(`Updated customer profile in PostgreSQL DB: ${saved.email} (${saved.id})`);
+    return saved;
+  }
+
   @EventPattern('order.paid')
   async handleOrderPaid(@Payload() event: OrderPaidEvent) {
     this.logger.log(`Received order.paid event for Order: ${event.order_id}`);
@@ -158,6 +203,14 @@ export class AppController {
 
       await this.inventoryRepo.save(inventory);
       this.logger.log(`Deducted ${dec.quantity} units of SKU ${dec.sku} from Warehouse ${dec.warehouse_code}. New Physical Stock: ${inventory.quantity}`);
+    }
+
+    // Event-Driven Cache Invalidation: Clear products cache so UI gets fresh stock
+    try {
+      await this.redis.del(PRODUCTS_CACHE_KEY);
+      this.logger.log(`[Cache Invalidation] Cleared ${PRODUCTS_CACHE_KEY} after PostgreSQL inventory deduction.`);
+    } catch (err) {
+      this.logger.warn(`Failed to invalidate products cache: ${err.message}`);
     }
   }
 }

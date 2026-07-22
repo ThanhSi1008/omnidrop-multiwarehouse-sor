@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUserApi, registerUserApi } from '../services/api';
+import { loginUserApi, registerUserApi, updateUserApi } from '../services/api';
 
 export interface UserProfile {
   id: string;
@@ -16,8 +16,11 @@ interface AuthContextType {
   login: (email: string) => Promise<void>;
   logout: () => void;
   register: (fullName: string, email: string) => Promise<void>;
+  updateProfile: (data: { fullName?: string; phone?: string; avatarUrl?: string }) => Promise<void>;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  isProfileModalOpen: boolean;
+  setIsProfileModalOpen: (open: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -99,8 +103,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfile = async (data: { fullName?: string; phone?: string; avatarUrl?: string }) => {
+    if (!user) return;
+    try {
+      if (!user.id.startsWith('usr_')) {
+        const updatedDb = await updateUserApi(user.id, data);
+        setUser({
+          ...user,
+          fullName: updatedDb.fullName,
+          phone: updatedDb.phone,
+          avatarUrl: updatedDb.avatarUrl,
+        });
+      } else {
+        setUser({
+          ...user,
+          ...data,
+        });
+      }
+    } catch (err) {
+      setUser({
+        ...user,
+        ...data,
+      });
+    }
+  };
+
   const logout = () => {
     setUser(null);
+    setIsProfileModalOpen(false);
   };
 
   return (
@@ -111,8 +141,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         register,
+        updateProfile,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        isProfileModalOpen,
+        setIsProfileModalOpen,
       }}
     >
       {children}

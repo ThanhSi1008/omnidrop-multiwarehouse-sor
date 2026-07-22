@@ -112,6 +112,13 @@ export class AppController {
     const stockKey = REDIS_KEYS.flashSaleInventory(sku);
     const limitKey = REDIS_KEYS.userLimit(campaignId, userId);
 
+    // Auto-initialize Redis stock key if not present (default to 30)
+    const existingStock = await this.redis.get(stockKey);
+    if (existingStock === null) {
+      await this.redis.set(stockKey, 30);
+      this.logger.log(`Auto-initialized Redis stock for SKU ${sku} to 30 units.`);
+    }
+
     // Lua Script from PRD:
     // returns: 1 (success), -1 (limit exceeded), -2 (out of stock)
     const luaScript = `
@@ -206,12 +213,28 @@ export class AppController {
     const stockKey = REDIS_KEYS.flashSaleInventory(sku);
     const limitKey = REDIS_KEYS.userLimit(campaignId, userId);
 
-    // Restore Redis stock and clear limit
-    const multi = this.redis.multi();
-    multi.incrby(stockKey, quantity);
-    multi.del(limitKey);
+    // Atomic Lua Refund Script to prevent Zombie / Duplicate Stock Restores:
+    const refundLuaScript = `
+      local stock_key = KEYS[1]
+      local limit_key = KEYS[2]
+      local qty = tonumber(ARGV[1])
 
-    const results = await multi.exec();
-    this.logger.log(`Restored Redis stock for ${sku} (+${quantity}) and cleared user purchase limit for ${userId}. Results: ${JSON.stringify(results)}`);
+      -- Only restore stock if the active purchase lock exists
+      local has_lock = redis.call("EXISTS", limit_key)
+      if has_lock == 1 then
+        redis.call("INCRBY", stock_key, qty)
+        redis.call("DEL", limit_key)
+        return 1
+      else
+        return 0 -- Lock already cleared or expired, skip restore to avoid zombie stock
+      end
+    `;
+
+    const result = await this.redis.eval(refundLuaScript, 2, stockKey, limitKey, quantity);
+    if (result === 1) {
+      this.logger.log(`Restored Redis stock for ${sku} (+${quantity}) and cleared lock for ${userId}.`);
+    } else {
+      this.logger.log(`Skipped stock restore for ${sku} & ${userId}: lock was already released or expired (Anti-Zombie Guard).`);
+    }
   }
 }

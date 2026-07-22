@@ -23,6 +23,8 @@
     "@grpc/proto-loader": "^0.8.1",
     "@nestjs/microservices": "^11.1.28",
     "amqp-connection-manager": "^5.0.0",
-    "amqplib": "^2.0.1"
+    "amqplib": "^2.0.1",
+    "cloudinary": "^2.10.0",
+    "dotenv": "^17.4.2"
   }
 }
